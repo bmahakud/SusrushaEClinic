@@ -50,6 +50,7 @@ AUTHENTICATION_BACKENDS = (
 INSTALLED_APPS = [
     'account.apps.AccountConfig',
     'accountAPIs.apps.AccountapisConfig',
+    'medical_management.apps.MedicalManagementConfig',
     'home.apps.HomeConfig',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -263,8 +264,8 @@ REST_FRAMEWORK = {
 
    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
    
-   #'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-   #'PAGE_SIZE': 2
+   'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+   'PAGE_SIZE': 20
 
 
 }

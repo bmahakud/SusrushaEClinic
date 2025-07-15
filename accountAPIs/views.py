@@ -9,11 +9,17 @@ import random
 import requests
 from django.core.mail import send_mail
 from rest_framework_simplejwt.tokens import RefreshToken
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter, OrderingFilter
+from django.db.models import Q
+from django.shortcuts import get_object_or_404
 
 from .serializers import (
     UserSerializer, UserSearchSerializer, RegistrationSerializer,
     OTPGenerationSerializer, OTPVerificationSerializer, LoginResponseSerializer,
-    CreateAdminSerializer, CreateDoctorSerializer
+    CreateAdminSerializer, CreateDoctorSerializer, ProfileUpdateSerializer,
+    ProfilePhotoUploadSerializer, UserListSerializer, PatientSearchSerializer,
+    DoctorSearchSerializer, AdminSearchSerializer
 )
 from account.models import Account, UserType
 
@@ -33,6 +39,180 @@ class UserSearchView(generics.ListAPIView):
         if query:
             return User.objects.filter(username__icontains=query)
         return User.objects.all()
+
+# Profile Management Views
+class GetMyProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        """Get current user's profile"""
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class UpdateMyProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def put(self, request):
+        """Update current user's profile"""
+        serializer = ProfileUpdateSerializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                'message': 'Profile updated successfully',
+                'profile': UserSerializer(request.user).data
+            }, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class UploadProfilePhotoView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        """Upload profile picture"""
+        serializer = ProfilePhotoUploadSerializer(request.user, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                'message': 'Profile photo uploaded successfully',
+                'profile_image': request.user.profile_image.url if request.user.profile_image else None
+            }, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# User Listing Views with Pagination and Filtering
+class ListPatientsView(generics.ListAPIView):
+    serializer_class = UserListSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['is_active', 'city', 'state', 'country']
+    search_fields = ['firstname', 'lastname', 'email', 'username', 'phoneno']
+    ordering_fields = ['firstname', 'lastname', 'date_joined']
+    ordering = ['-date_joined']
+    
+    def get_queryset(self):
+        """Get all patients with pagination/filtering"""
+        try:
+            patient_type = UserType.objects.get(name='patient')
+            return User.objects.filter(usertype=patient_type)
+        except UserType.DoesNotExist:
+            return User.objects.none()
+
+class ListDoctorsView(generics.ListAPIView):
+    serializer_class = UserListSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['is_active', 'city', 'state', 'country']
+    search_fields = ['firstname', 'lastname', 'email', 'username', 'phoneno']
+    ordering_fields = ['firstname', 'lastname', 'date_joined']
+    ordering = ['-date_joined']
+    
+    def get_queryset(self):
+        """Get all doctors with pagination/filtering"""
+        try:
+            doctor_type = UserType.objects.get(name='doctor')
+            return User.objects.filter(usertype=doctor_type)
+        except UserType.DoesNotExist:
+            return User.objects.none()
+
+class ListAdminsView(generics.ListAPIView):
+    serializer_class = UserListSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['is_active', 'city', 'state', 'country']
+    search_fields = ['firstname', 'lastname', 'email', 'username', 'phoneno']
+    ordering_fields = ['firstname', 'lastname', 'date_joined']
+    ordering = ['-date_joined']
+    
+    def get_queryset(self):
+        """Get all admins with pagination/filtering"""
+        try:
+            admin_type = UserType.objects.get(name='clinic_admin')
+            return User.objects.filter(usertype=admin_type)
+        except UserType.DoesNotExist:
+            return User.objects.none()
+
+# Search Views
+class SearchPatientsView(generics.ListAPIView):
+    serializer_class = PatientSearchSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['is_active', 'city', 'state', 'country']
+    search_fields = ['firstname', 'lastname', 'email', 'username', 'phoneno', 'patient_profile__patient_id']
+    ordering_fields = ['firstname', 'lastname', 'date_joined']
+    ordering = ['-date_joined']
+    
+    def get_queryset(self):
+        """Search patients with advanced filtering"""
+        try:
+            patient_type = UserType.objects.get(name='patient')
+            queryset = User.objects.filter(usertype=patient_type)
+            
+            # Additional filters
+            clinic_center = self.request.query_params.get('clinic_center', None)
+            if clinic_center:
+                queryset = queryset.filter(patient_profile__clinic_center_id=clinic_center)
+            
+            return queryset
+        except UserType.DoesNotExist:
+            return User.objects.none()
+
+class SearchDoctorsView(generics.ListAPIView):
+    serializer_class = DoctorSearchSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['is_active', 'city', 'state', 'country']
+    search_fields = ['firstname', 'lastname', 'email', 'username', 'phoneno', 'doctor_profile__license_number']
+    ordering_fields = ['firstname', 'lastname', 'date_joined']
+    ordering = ['-date_joined']
+    
+    def get_queryset(self):
+        """Search doctors with advanced filtering"""
+        try:
+            doctor_type = UserType.objects.get(name='doctor')
+            queryset = User.objects.filter(usertype=doctor_type)
+            
+            # Additional filters
+            clinic_center = self.request.query_params.get('clinic_center', None)
+            specialization = self.request.query_params.get('specialization', None)
+            
+            if clinic_center:
+                queryset = queryset.filter(doctor_profile__clinic_center_id=clinic_center)
+            
+            if specialization:
+                queryset = queryset.filter(doctor_profile__specializations__name__icontains=specialization)
+            
+            return queryset
+        except UserType.DoesNotExist:
+            return User.objects.none()
+
+class SearchAdminsView(generics.ListAPIView):
+    serializer_class = AdminSearchSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['is_active', 'city', 'state', 'country']
+    search_fields = ['firstname', 'lastname', 'email', 'username', 'phoneno']
+    ordering_fields = ['firstname', 'lastname', 'date_joined']
+    ordering = ['-date_joined']
+    
+    def get_queryset(self):
+        """Search admins with advanced filtering"""
+        try:
+            admin_type = UserType.objects.get(name='clinic_admin')
+            queryset = User.objects.filter(usertype=admin_type)
+            
+            # Additional filters
+            clinic_center = self.request.query_params.get('clinic_center', None)
+            role = self.request.query_params.get('role', None)
+            
+            if clinic_center:
+                queryset = queryset.filter(admin_profile__clinic_center_id=clinic_center)
+            
+            if role:
+                queryset = queryset.filter(admin_profile__role__icontains=role)
+            
+            return queryset
+        except UserType.DoesNotExist:
+            return User.objects.none()
+
+
 
 # Registration and OTP Views
 class RegistrationView(APIView):

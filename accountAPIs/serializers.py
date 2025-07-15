@@ -26,6 +26,58 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id','firstname', 'lastname','email','username','phoneno','about','usertype','profile_image','gender','dateofbirth','address','city','state','country']
         depth=1
 
+# Profile Management Serializers
+class ProfileUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['firstname', 'lastname', 'email', 'about', 'gender', 'dateofbirth', 'address', 'city', 'state', 'country', 'pincode']
+        read_only_fields = ['username', 'phoneno', 'usertype']
+
+class ProfilePhotoUploadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['profile_image']
+
+class UserListSerializer(serializers.ModelSerializer):
+    usertype_name = serializers.CharField(source='usertype.name', read_only=True)
+    
+    class Meta:
+        model = User
+        fields = ['id', 'firstname', 'lastname', 'email', 'username', 'phoneno', 'usertype', 'usertype_name', 'profile_image', 'is_active', 'date_joined']
+
+# Search Serializers
+class PatientSearchSerializer(serializers.ModelSerializer):
+    usertype_name = serializers.CharField(source='usertype.name', read_only=True)
+    patient_id = serializers.CharField(source='patient_profile.patient_id', read_only=True)
+    
+    class Meta:
+        model = User
+        fields = ['id', 'firstname', 'lastname', 'email', 'username', 'phoneno', 'usertype', 'usertype_name', 'profile_image', 'patient_id', 'is_active', 'date_joined']
+
+class DoctorSearchSerializer(serializers.ModelSerializer):
+    usertype_name = serializers.CharField(source='usertype.name', read_only=True)
+    license_number = serializers.CharField(source='doctor_profile.license_number', read_only=True)
+    specializations = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = User
+        fields = ['id', 'firstname', 'lastname', 'email', 'username', 'phoneno', 'usertype', 'usertype_name', 'profile_image', 'license_number', 'specializations', 'is_active', 'date_joined']
+    
+    def get_specializations(self, obj):
+        if hasattr(obj, 'doctor_profile'):
+            return [spec.name for spec in obj.doctor_profile.specializations.all()]
+        return []
+
+class AdminSearchSerializer(serializers.ModelSerializer):
+    usertype_name = serializers.CharField(source='usertype.name', read_only=True)
+    role = serializers.CharField(source='admin_profile.role', read_only=True)
+    
+    class Meta:
+        model = User
+        fields = ['id', 'firstname', 'lastname', 'email', 'username', 'phoneno', 'usertype', 'usertype_name', 'profile_image', 'role', 'is_active', 'date_joined']
+
+
+
 # Registration and OTP Serializers
 class RegistrationSerializer(serializers.ModelSerializer):
     class Meta:

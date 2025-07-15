@@ -34,4 +34,5 @@ urlpatterns = [
     #account app
     path('account/',include('account.urls')),
     path('api/',include('accountAPIs.urls',namespace='account-api')),
+    path('api/medical/',include('medical_management.urls',namespace='medical-management')),
 ]

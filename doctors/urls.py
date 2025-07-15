@@ -1,6 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from . import views
+from .views import DoctorSlotViewSet
 
 app_name = 'doctors'
 
@@ -41,15 +42,6 @@ urlpatterns = [
          }), 
          name='doctor-document-detail'),
     
-    path('<str:doctor_id>/availability/', 
-         views.DoctorAvailabilityViewSet.as_view({'get': 'list', 'post': 'create'}), 
-         name='doctor-availability'),
-    path('<str:doctor_id>/availability/<int:pk>/', 
-         views.DoctorAvailabilityViewSet.as_view({
-             'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'
-         }), 
-         name='doctor-availability-detail'),
-    
     path('<str:doctor_id>/schedule/', 
          views.DoctorScheduleViewSet.as_view({'get': 'list', 'post': 'create'}), 
          name='doctor-schedule'),
@@ -70,5 +62,14 @@ urlpatterns = [
     
     # Include router URLs for main doctor profile operations
     path('', include(router.urls)),
+]
+
+urlpatterns += [
+    path('<str:doctor_id>/slots/',
+         DoctorSlotViewSet.as_view({'get': 'list', 'post': 'create'}),
+         name='doctor-slot-list'),
+    path('<str:doctor_id>/slots/<int:pk>/',
+         DoctorSlotViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}),
+         name='doctor-slot-detail'),
 ]
 

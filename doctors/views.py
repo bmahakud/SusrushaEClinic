@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 from authentication.models import User
 from .models import (
     DoctorProfile, DoctorEducation, DoctorExperience, 
-    DoctorDocument, DoctorAvailability, DoctorSchedule, DoctorReview
+    DoctorDocument, DoctorAvailability, DoctorSchedule, DoctorReview, DoctorSlot
 )
 from .serializers import (
     DoctorProfileSerializer, DoctorProfileCreateSerializer,
@@ -22,7 +22,7 @@ from .serializers import (
     DoctorDocumentSerializer, DoctorAvailabilitySerializer,
     DoctorScheduleSerializer, DoctorReviewSerializer,
     DoctorListSerializer, DoctorSearchSerializer, DoctorStatsSerializer,
-    DoctorScheduleCreateSerializer, DoctorAvailabilityCreateSerializer
+    DoctorAvailabilityCreateSerializer, DoctorSlotSerializer
 )
 
 
@@ -197,22 +197,6 @@ class DoctorDocumentViewSet(ModelViewSet):
         serializer.save(doctor_id=doctor_id, uploaded_by=self.request.user)
 
 
-class DoctorAvailabilityViewSet(ModelViewSet):
-    """ViewSet for doctor availability"""
-    permission_classes = [permissions.IsAuthenticated]
-    
-    def get_queryset(self):
-        """Get availability for specific doctor"""
-        doctor_id = self.kwargs.get('doctor_id')
-        return DoctorAvailability.objects.filter(doctor_id=doctor_id)
-    
-    def get_serializer_class(self):
-        """Return appropriate serializer based on action"""
-        if self.action == 'create':
-            return DoctorAvailabilityCreateSerializer
-        return DoctorAvailabilitySerializer
-
-
 class DoctorScheduleViewSet(ModelViewSet):
     """ViewSet for doctor schedule"""
     permission_classes = [permissions.IsAuthenticated]
@@ -254,6 +238,22 @@ class DoctorReviewViewSet(ModelViewSet):
         """Create review for doctor"""
         doctor_id = self.kwargs.get('doctor_id')
         serializer.save(doctor_id=doctor_id, patient=self.request.user)
+
+
+class DoctorSlotViewSet(ModelViewSet):
+    """ViewSet for doctor slots (multiple slots per day, month view)"""
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = DoctorSlotSerializer
+
+    def get_queryset(self):
+        doctor_id = self.kwargs.get('doctor_id')
+        queryset = DoctorSlot.objects.filter(doctor_id=doctor_id)
+        # Optional: filter by month
+        month = self.request.query_params.get('month')
+        year = self.request.query_params.get('year')
+        if month and year:
+            queryset = queryset.filter(date__year=year, date__month=month)
+        return queryset.order_by('date', 'start_time')
 
 
 class DoctorSearchView(APIView):

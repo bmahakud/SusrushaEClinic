@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import (
-    DoctorProfile, DoctorSchedule, DoctorAvailability,
+    DoctorProfile, DoctorSchedule,
     DoctorEducation, DoctorExperience, DoctorReview, DoctorDocument, DoctorSlot
 )
 

@@ -34,10 +34,10 @@ urlpatterns = [
     path('api/admin/patients/', include('patients.urls')),
     path('api/admin/doctors/', include('doctors.urls')),
     path("api/consultations/", include("consultations.urls")),
-    path('api/prescriptions/', include('prescriptions.urls')),
-    path('api/payments/', include('payments.urls')),
+    # path('api/prescriptions/', include('prescriptions.urls')),
+    # path('api/payments/', include('payments.urls')),
     path('api/eclinic/', include('eclinic.urls')),
-    path('api/analytics/', include('analytics.urls')),
+    # path('api/analytics/', include('analytics.urls')),
 ]
 
 # Serve media files in development

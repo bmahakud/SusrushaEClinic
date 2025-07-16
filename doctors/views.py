@@ -14,15 +14,14 @@ from datetime import datetime, timedelta
 from authentication.models import User
 from .models import (
     DoctorProfile, DoctorEducation, DoctorExperience, 
-    DoctorDocument, DoctorAvailability, DoctorSchedule, DoctorReview, DoctorSlot
+    DoctorDocument, DoctorSchedule, DoctorReview, DoctorSlot
 )
 from .serializers import (
     DoctorProfileSerializer, DoctorProfileCreateSerializer,
     DoctorEducationSerializer, DoctorExperienceSerializer,
-    DoctorDocumentSerializer, DoctorAvailabilitySerializer,
-    DoctorScheduleSerializer, DoctorReviewSerializer,
-    DoctorListSerializer, DoctorSearchSerializer, DoctorStatsSerializer,
-    DoctorAvailabilityCreateSerializer, DoctorSlotSerializer
+    DoctorDocumentSerializer, DoctorScheduleSerializer,
+    DoctorReviewSerializer, DoctorListSerializer, DoctorSearchSerializer,
+    DoctorStatsSerializer, DoctorScheduleCreateSerializer, DoctorSlotSerializer
 )
 
 

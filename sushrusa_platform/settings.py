@@ -54,10 +54,8 @@ LOCAL_APPS = [
     'patients',
     'doctors',
     'consultations',
-    'prescriptions',
-    'payments',
     'eclinic',
-    'analytics',
+    'logs',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
